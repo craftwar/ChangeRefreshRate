@@ -1,0 +1,26 @@
+version: '{build}'
+skip_commits:
+  files:
+    - README.md
+image: Visual Studio 2022
+init:
+  - ps: if (0) { iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1')) } #rdp debug
+      
+build_script:
+- call msbuild /m /p:Configuration=Release;Platform=x86 "%APPVEYOR_BUILD_FOLDER%\ChangeRefreshRate\ChangeRefreshRate.sln" /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+- cd "ChangeRefreshRate\Release"
+- '7z a %APPVEYOR_BUILD_FOLDER%\ChangeRefreshRate.7z -mx=9 -myx=9 *.exe'
+
+- set release=%APPVEYOR_REPO_COMMIT:~0,7%
+
+test: off
+artifacts:
+- path: ChangeRefreshRate.7z
+deploy:
+  - provider: Environment
+    name: github git
+    tag: git
+    release: $(release)
+    force_update: true
+    on:
+      branch: master
